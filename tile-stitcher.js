@@ -57,6 +57,7 @@ Usage:
     -b|--bounds minLon,minLat,maxLon,maxLat     Specify max bounds
     --full                                      Use all available tiles
     -o|--output filename.png                    Specify output filename
+    --info                                      Print info found in manifest
     -h|--help                                   Show help`);
         return;
     }
@@ -67,6 +68,55 @@ Usage:
 
     if (zoomArgIndex > 0 && zoomArgIndex < args.length - 1) {
         params.zoom = +args[zoomArgIndex + 1];
+    }
+
+    if (args.includes("--info")) {
+        console.log(`Zoom levels: ${metadata.minzoom}-${metadata.maxzoom}`);
+        console.log(`Lon/Lat Bounds: ${metadata.bounds}`);
+
+        const bounds = metadata.bounds.split(",").map(s => +s);
+
+        console.log("Tile Number Ranges:");
+
+        for (let zoom = +metadata.minzoom; zoom <= +metadata.maxzoom; zoom++) {
+            const topLeftTile = lonLatToXY(bounds[0], bounds[3], zoom);
+            const bottomRightTile = lonLatToXY(bounds[2], bounds[1], zoom);
+
+            const tlX = Math.floor(topLeftTile.x);
+            const tlY = Math.floor(topLeftTile.y);
+            const brX = Math.floor(bottomRightTile.x);
+            const brY = Math.floor(bottomRightTile.y);
+
+            const w = brX - tlX + 1;
+            const h = brY - tlY + 1;
+
+            console.log(`\tZoom ${zoom}: (${tlX},${tlY}) - (${brX},${brY}) [${w} x ${h} = ${w * h} tiles]`);
+        }
+
+        console.log(`Scale: ${metadata.scale}`);
+
+        const imageSize = TILE_SIZE * +metadata.scale;
+
+        console.log(`Image Size: ${imageSize}x${imageSize}`);
+
+        console.log("Total Image Size:");
+
+        for (let zoom = +metadata.minzoom; zoom <= +metadata.maxzoom; zoom++) {
+            const topLeftTile = lonLatToXY(bounds[0], bounds[3], zoom);
+            const bottomRightTile = lonLatToXY(bounds[2], bounds[1], zoom);
+
+            const tlX = Math.floor(topLeftTile.x);
+            const tlY = Math.floor(topLeftTile.y);
+            const brX = Math.floor(bottomRightTile.x);
+            const brY = Math.floor(bottomRightTile.y);
+
+            const w = brX - tlX + 1;
+            const h = brY - tlY + 1;
+
+            console.log(`\tZoom ${zoom}: ${w * imageSize} pixels x ${h * imageSize} pixels`);
+        }
+
+        return;
     }
 
     if (args.includes("--full")) {
